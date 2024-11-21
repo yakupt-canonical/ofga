@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/juju/zaputil/zapctx"
@@ -35,6 +36,10 @@ type OpenFGAParams struct {
 	// AuthModelID specifies the ID of the OpenFGA Authorization model to be
 	// used for authorization checks.
 	AuthModelID string
+	// Transport specifies the mechanism by which individual
+	// HTTP requests to the OpenFGA are made.
+	// If nil, DefaultTransport is used.
+	Transport http.RoundTripper
 }
 
 // OpenFgaApi defines the methods of the underlying api client that our Client
@@ -94,6 +99,24 @@ func NewClient(ctx context.Context, p OpenFGAParams) (*Client, error) {
 				ApiToken: p.Token,
 			},
 		}
+	} else {
+		config.Credentials = &credentials.Credentials{
+			Method: credentials.CredentialsMethodNone,
+		}
+	}
+	if p.Transport != nil {
+		// When a custom HTTPClient is provided in OpenFGA configuration,
+		// it does not add authorization headers, so we manually add them here.
+		httpClient, headers := config.Credentials.GetHttpClientAndHeaderOverrides()
+		httpClient.Transport = p.Transport
+		defaultHeaders := make(map[string]string)
+		if len(headers) != 0 {
+			for idx := range headers {
+				defaultHeaders[headers[idx].Key] = headers[idx].Value
+			}
+		}
+		config.HTTPClient = httpClient
+		config.DefaultHeaders = defaultHeaders
 	}
 	configuration, err := openfga.NewConfiguration(config)
 	if err != nil {

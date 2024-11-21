@@ -206,6 +206,59 @@ func TestNewClient(t *testing.T) {
 			},
 		}},
 		expectedAuthModelID: validFGAParams.AuthModelID,
+	}, {
+		about: "client with transport created successfully",
+		params: ofga.OpenFGAParams{
+			Scheme:      "http",
+			Host:        "localhost",
+			Port:        "8080",
+			Transport:   httpmock.DefaultTransport,
+			Token:       "InsecureTokenDoNotUse",
+			StoreID:     "0TEST000000000000000000000",
+			AuthModelID: "TestAuthModelID",
+		},
+		mockRoutes: []*mockhttp.RouteResponder{{
+			Route: ListStoreRoute,
+		}, {
+			Route:              GetStoreRoute,
+			ExpectedPathParams: []string{validFGAParams.StoreID},
+			MockResponse:       openfga.GetStoreResponse{Name: "Test Store"},
+		}, {
+			Route:              ReadAuthModelRoute,
+			ExpectedPathParams: []string{validFGAParams.StoreID, validFGAParams.AuthModelID},
+			MockResponse: openfga.ReadAuthorizationModelResponse{
+				AuthorizationModel: &openfga.AuthorizationModel{
+					Id: validFGAParams.AuthModelID,
+				},
+			},
+		}},
+		expectedAuthModelID: validFGAParams.AuthModelID,
+	}, {
+		about: "client with transport and no token created successfully",
+		params: ofga.OpenFGAParams{
+			Scheme:      "http",
+			Host:        "localhost",
+			Port:        "8080",
+			Transport:   httpmock.DefaultTransport,
+			StoreID:     "0TEST000000000000000000000",
+			AuthModelID: "TestAuthModelID",
+		},
+		mockRoutes: []*mockhttp.RouteResponder{{
+			Route: ListStoreRoute,
+		}, {
+			Route:              GetStoreRoute,
+			ExpectedPathParams: []string{validFGAParams.StoreID},
+			MockResponse:       openfga.GetStoreResponse{Name: "Test Store"},
+		}, {
+			Route:              ReadAuthModelRoute,
+			ExpectedPathParams: []string{validFGAParams.StoreID, validFGAParams.AuthModelID},
+			MockResponse: openfga.ReadAuthorizationModelResponse{
+				AuthorizationModel: &openfga.AuthorizationModel{
+					Id: validFGAParams.AuthModelID,
+				},
+			},
+		}},
+		expectedAuthModelID: validFGAParams.AuthModelID,
 	}}
 
 	for _, test := range tests {
